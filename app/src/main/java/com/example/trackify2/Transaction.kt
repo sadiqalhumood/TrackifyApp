@@ -33,11 +33,10 @@ import com.example.trackify2.ui.theme.Trackify2Theme
 
 @Composable
 fun TransactionApp() {
-    // Observe dark mode state from ViewModel
     val viewModel: AppSettingsViewModel = viewModel()
     val isDarkMode = viewModel.isDarkMode.collectAsState()
 
-    Trackify2Theme(darkTheme = isDarkMode.value) { // Pass dark mode state to the theme
+    Trackify2Theme(darkTheme = isDarkMode.value) {
         val navController = rememberNavController()
 
         Scaffold(
@@ -85,7 +84,7 @@ fun TransactionScreen(navController: androidx.navigation.NavHostController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Transaction List Header
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -107,7 +106,6 @@ fun TransactionScreen(navController: androidx.navigation.NavHostController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Transaction List
             TransactionItem("Transaction Name", "Yesterday, 12:49 PM", "-$4.30")
             Spacer(modifier = Modifier.height(8.dp))
             TransactionItem("Transaction Name", "Yesterday, 12:49 PM", "-$4.30")
@@ -118,7 +116,6 @@ fun TransactionScreen(navController: androidx.navigation.NavHostController) {
 @Composable
 fun TransactionHistoryScreen(navController: NavController) {
     Column(modifier = Modifier.padding(16.dp)) {
-        // Back Button
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
@@ -129,7 +126,6 @@ fun TransactionHistoryScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Search Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -159,7 +155,6 @@ fun TransactionHistoryScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Filters
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -189,7 +184,6 @@ fun TransactionHistoryScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Transaction List
         Text(
             text = "Transactions",
             fontSize = 18.sp,
@@ -198,7 +192,7 @@ fun TransactionHistoryScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        repeat(10) { // Example list of transactions
+        repeat(10) {
             TransactionItem("Transaction Name", "Yesterday, 12:49 PM", "-$4.30")
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -257,7 +251,6 @@ fun BottomNavigationBar(navController: NavController) {
                 selected = currentDestination == item.route,
                 onClick = {
                     navController.navigate(item.route) {
-                        // Ensure only one instance of the destination exists in the back stack
                         popUpTo("home") { inclusive = false }
                         launchSingleTop = true
                     }

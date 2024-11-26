@@ -26,7 +26,6 @@ fun ProfileScreen(navController: NavController, viewModel: AppSettingsViewModel)
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Account Section
         Text(
             text = "Account",
             fontSize = 18.sp,
@@ -70,7 +69,6 @@ fun ProfileScreen(navController: NavController, viewModel: AppSettingsViewModel)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Settings Section
         Text(
             text = "Settings",
             fontSize = 18.sp,
@@ -121,7 +119,6 @@ fun SettingItem(icon: ImageVector, label: String, onClick: () -> Unit) {
 
 @Composable
 fun DisplaySettingsScreen(navController: NavController, viewModel: AppSettingsViewModel) {
-    // Observe dark mode state
     val isDarkMode = viewModel.isDarkMode.collectAsState()
 
     Column(
@@ -129,7 +126,6 @@ fun DisplaySettingsScreen(navController: NavController, viewModel: AppSettingsVi
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Back Button
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
@@ -146,8 +142,7 @@ fun DisplaySettingsScreen(navController: NavController, viewModel: AppSettingsVi
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-
-        // Dark Mode Toggle
+        
         Row(
             modifier = Modifier
                 .fillMaxWidth()
