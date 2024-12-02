@@ -33,10 +33,11 @@ import com.example.trackify2.ui.theme.Trackify2Theme
 
 @Composable
 fun TransactionApp() {
+    // Observe dark mode state from ViewModel
     val viewModel: AppSettingsViewModel = viewModel()
     val isDarkMode = viewModel.isDarkMode.collectAsState()
 
-    Trackify2Theme(darkTheme = isDarkMode.value) {
+    Trackify2Theme(darkTheme = isDarkMode.value) { // Pass dark mode state to the theme
         val navController = rememberNavController()
 
         Scaffold(
@@ -83,7 +84,6 @@ fun TransactionScreen(navController: androidx.navigation.NavHostController) {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -251,6 +251,7 @@ fun BottomNavigationBar(navController: NavController) {
                 selected = currentDestination == item.route,
                 onClick = {
                     navController.navigate(item.route) {
+                        // Ensure only one instance of the destination exists in the back stack
                         popUpTo("home") { inclusive = false }
                         launchSingleTop = true
                     }

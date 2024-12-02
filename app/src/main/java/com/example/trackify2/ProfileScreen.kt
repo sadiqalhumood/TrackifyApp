@@ -26,6 +26,7 @@ fun ProfileScreen(navController: NavController, viewModel: AppSettingsViewModel)
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // Account Section
         Text(
             text = "Account",
             fontSize = 18.sp,
@@ -69,6 +70,7 @@ fun ProfileScreen(navController: NavController, viewModel: AppSettingsViewModel)
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Settings Section
         Text(
             text = "Settings",
             fontSize = 18.sp,
@@ -142,7 +144,7 @@ fun DisplaySettingsScreen(navController: NavController, viewModel: AppSettingsVi
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
