@@ -1,5 +1,6 @@
 [versions]
 agp = "8.6.0"
+converterMoshi = "2.5.0"
 kotlin = "1.9.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -12,9 +13,20 @@ engageCore = "1.5.5"
 navigationRuntimeKtx = "2.8.4"
 navigationCompose = "2.8.4"
 firebaseAuthKtx = "23.1.0"
+fragmentKtx = "1.7.1"
+appcompat = "1.6.1"
+material = "1.12.0"
+webkit = "1.11.0"
+timber = "5.0.1"
+tellerConnectAndroidSdk = "+"
+retrofit = "2.10.0"
+moshi = "1.14.0"
+okhttp = "4.10.0"
+firebaseFunctionsKtx = "21.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+converter-moshi-v250 = { module = "com.squareup.retrofit2:converter-moshi", version.ref = "converterMoshi" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -32,6 +44,21 @@ engage-core = { group = "com.google.android.engage", name = "engage-core", versi
 androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuthKtx" }
+androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+teller-connect-sdk = { group = "io.teller", name = "connect-android-sdk", version.ref = "tellerConnectAndroidSdk" }
+androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "webkit" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+retrofit-converter-moshi = { group = "com.squareup.retrofit2", name = "converter-moshi", version.ref = "retrofit" }
+okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version = "4.10.0" }
+firebase-functions-ktx = { group = "com.google.firebase", name = "firebase-functions-ktx", version.ref = "firebaseFunctionsKtx" }
+
+
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

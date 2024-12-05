@@ -1,5 +1,6 @@
 package com.example.trackify2
 
+import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,6 +23,8 @@ import androidx.navigation.NavController
 
 @Composable
 fun ProfileScreen(navController: NavController, viewModel: AppSettingsViewModel) {
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -83,8 +87,32 @@ fun ProfileScreen(navController: NavController, viewModel: AppSettingsViewModel)
             label = "Display",
             onClick = { navController.navigate("displaySettings") } // Navigate to Display Settings
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Bank Account Section
+        Text(
+            text = "Bank Account",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        Button(
+            onClick = {
+                // Start Teller Connect Activity
+                val intent = Intent(context, ConnectActivity::class.java)
+                context.startActivity(intent)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+        ) {
+            Text(text = "Connect Bank Account")
+        }
     }
 }
+
 
 
 @Composable
