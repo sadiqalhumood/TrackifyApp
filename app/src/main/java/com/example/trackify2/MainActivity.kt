@@ -10,9 +10,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.trackify2.ui.theme.Trackify2Theme
 import com.google.firebase.FirebaseApp
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        FirebaseFirestore.setLoggingEnabled(true)
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
         setContent {
