@@ -1,5 +1,8 @@
 package com.example.trackify2
 
+import android.app.Application
+import android.util.Base64
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.functions.FirebaseFunctions
@@ -7,75 +10,51 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import retrofit2.HttpException
+import timber.log.Timber
+import java.io.IOException
+import javax.net.ssl.SSLHandshakeException
 
-class TransactionViewModel : ViewModel() {
-    private val functions = FirebaseFunctions.getInstance()
 
+class TransactionViewModel(application: Application) : AndroidViewModel(application) {
+    private val tellerApiService: TellerApiService = RetrofitInstance.getTellerApi(application)
     private val _transactions = MutableStateFlow<List<Transaction>>(emptyList())
     val transactions: StateFlow<List<Transaction>> = _transactions
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    companion object {
-        const val FETCH_ACCOUNT_ID_FUNCTION = "fetchAccountId"
-        const val FETCH_TRANSACTIONS_FUNCTION = "fetchTransactions"
+    fun setError(message: String) {
+        _error.value = message
     }
 
-    fun fetchAccountId(accessToken: String, onAccountIdFetched: (String) -> Unit) {
-        viewModelScope.launch {
-            try {
-                val data = hashMapOf("accessToken" to accessToken)
-                val result = functions
-                    .getHttpsCallable(FETCH_ACCOUNT_ID_FUNCTION)
-                    .call(data)
-                    .await()
+    suspend fun fetchTransactions(accessToken: String) {
+        try {
+            val authHeader = createAuthHeader(accessToken)
+            // First fetch the account
+            val accounts = tellerApiService.getAccounts(authHeader)
 
-                val accountId = result.getData() as? String
-                if (accountId.isNullOrEmpty()) {
-                    _error.value = "Failed to fetch account ID: Empty response"
-                } else {
-                    onAccountIdFetched(accountId)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _error.value = "Failed to fetch account ID: ${e.localizedMessage}"
-            }
-        }
-    }
-
-    fun fetchTransactions(accessToken: String, accountId: String) {
-        viewModelScope.launch {
-            try {
-                val data = hashMapOf(
-                    "accessToken" to accessToken,
-                    "accountId" to accountId
+            if (accounts.isNotEmpty()) {
+                val accountId = accounts[0].id
+                val transactions = tellerApiService.getTransactions(
+                    authorization = authHeader,
+                    accountId = accountId
                 )
-
-                val result = functions
-                    .getHttpsCallable(FETCH_TRANSACTIONS_FUNCTION)
-                    .call(data)
-                    .await()
-
-                @Suppress("UNCHECKED_CAST")
-                val transactionsList = result.getData() as? List<Map<String, Any>>
-                if (transactionsList.isNullOrEmpty()) {
-                    _error.value = "No transactions found"
-                } else {
-                    _transactions.value = transactionsList.map { transactionData ->
-                        Transaction(
-                            id = transactionData["id"] as String,
-                            name = transactionData["name"] as String,
-                            date = transactionData["date"] as String,
-                            amount = transactionData["amount"] as String
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _error.value = e.localizedMessage ?: "An error occurred"
+                _transactions.value = transactions
+                _error.value = null
+                Timber.d("Fetched ${transactions.size} transactions")
+            } else {
+                _error.value = "No accounts found"
             }
+        } catch (e: Exception) {
+            Timber.e(e, "Error fetching transactions: ${e.message}")
+            _error.value = "Error fetching transactions: ${e.message}"
         }
+    }
+
+    private fun createAuthHeader(accessToken: String): String {
+        val credentials = "$accessToken:"
+        return "Basic ${Base64.encodeToString(credentials.toByteArray(), Base64.NO_WRAP)}"
     }
 }
 

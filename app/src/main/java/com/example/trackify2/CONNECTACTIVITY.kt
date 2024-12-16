@@ -24,7 +24,7 @@ class ConnectActivity : FragmentActivity(), ConnectListener {
             environment = Environment.SANDBOX,
             selectAccount = SelectAccount.SINGLE,
             products = listOf(Product.IDENTITY, Product.TRANSACTIONS, Product.BALANCE),
-            debug = false
+            debug = true
         )
         const val EXTRA_CONFIG = "extra_config"
     }
@@ -59,6 +59,7 @@ class ConnectActivity : FragmentActivity(), ConnectListener {
     }
 
     override fun onSuccess(registration: Registration) {
+        Timber.d("onSuccess triggered")
         val accessToken = registration.accessToken
         if (accessToken != null) {
             Timber.i("Access Token: $accessToken")

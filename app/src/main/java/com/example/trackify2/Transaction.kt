@@ -32,124 +32,110 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trackify2.ui.theme.Trackify2Theme
-
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @Composable
-fun TransactionApp() {
-    val viewModel: AppSettingsViewModel = viewModel()
-    val isDarkMode = viewModel.isDarkMode.collectAsState()
+fun TransactionScreen(
+    viewModel: AppSettingsViewModel = viewModel(),
+    navController: NavController
+) {
+    // This part remains the same
+    val context = LocalContext.current
+    val sharedPrefs = context.getSharedPreferences("APP_PREFS", Context.MODE_PRIVATE)
+    val storedAccessToken = sharedPrefs.getString("ACCESS_TOKEN", null)
 
-    Trackify2Theme(darkTheme = isDarkMode.value) {
-        val navController = rememberNavController()
-
-        Scaffold(
-            bottomBar = {
-                BottomNavigationBar(navController)
-            }
-        ) { innerPadding ->
-            NavHost(
-                navController = navController,
-                startDestination = "home",
-                modifier = Modifier.padding(innerPadding)
-            ) {
-                composable("home") {
-                    val context = LocalContext.current
-                    val sharedPrefs = context.getSharedPreferences("APP_PREFS", Context.MODE_PRIVATE)
-                    val storedAccessToken = sharedPrefs.getString("ACCESS_TOKEN", null)
-
-                    if (storedAccessToken == null) {
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                "No bank account linked.",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = { navController.navigate("profile") }) {
-                                Text("Go to Profile")
-                            }
-                        }
-                    } else {
-
-                        val transactionViewModel: TransactionViewModel = viewModel()
-
-                        TransactionScreen(
-                            viewModel = transactionViewModel,
-                            accessToken = storedAccessToken
-                        )
-                    }
-                }
-
-                composable("profile") { ProfileScreen(navController, viewModel) }
-                composable("displaySettings") { DisplaySettingsScreen(navController, viewModel) }
+    if (storedAccessToken == null) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "No bank account linked.",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(onClick = { navController.navigate("profile") }) {
+                Text("Go to Profile")
             }
         }
+    } else {
+        val transactionViewModel: TransactionViewModel = viewModel()
+        ActualTransactionScreen(
+            viewModel = transactionViewModel,
+            accessToken = storedAccessToken
+        )
     }
 }
 
-
 @Composable
-fun TransactionScreen(viewModel: TransactionViewModel, accessToken: String) {
+private fun ActualTransactionScreen(
+    viewModel: TransactionViewModel,
+    accessToken: String
+) {
     val transactions by viewModel.transactions.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val sharedPrefs = context.getSharedPreferences("APP_PREFS", Context.MODE_PRIVATE)
-    val accountId = sharedPrefs.getString("ACCOUNT_ID", null)
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        if (accountId == null) {
-
-            viewModel.fetchAccountId(accessToken) { fetchedAccountId ->
-                sharedPrefs.edit().putString("ACCOUNT_ID", fetchedAccountId).apply()
-                viewModel.fetchTransactions(accessToken, fetchedAccountId)
-            }
-        } else {
-            viewModel.fetchTransactions(accessToken, accountId)
-        }
+        viewModel.fetchTransactions(accessToken)
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Transactions", fontSize = MaterialTheme.typography.titleLarge.fontSize, fontWeight = FontWeight.Bold)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            "Transactions",
+            fontSize = MaterialTheme.typography.titleLarge.fontSize,
+            fontWeight = FontWeight.Bold
+        )
 
         when {
             error != null -> {
-                Text("Error: $error", color = MaterialTheme.colorScheme.error)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        error!!,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                viewModel.fetchTransactions(accessToken)
+                            }
+                        }
+                    ) {
+                        Text("Retry")
+                    }
+                }
             }
             transactions.isEmpty() -> {
-                Text("Loading transactions...")
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
             else -> {
                 LazyColumn {
                     items(transactions) { transaction ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column {
-                                    Text(transaction.name, fontWeight = FontWeight.Bold)
-                                    Text(transaction.date, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                Text(transaction.amount, fontWeight = FontWeight.Bold)
-                            }
-                        }
+                        TransactionItem(transaction)
                     }
                 }
             }
@@ -157,6 +143,56 @@ fun TransactionScreen(viewModel: TransactionViewModel, accessToken: String) {
     }
 }
 
+@Composable
+private fun TransactionItem(transaction: Transaction) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    // Use description instead of name
+                    transaction.description,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                // Add the transaction type
+                Text(
+                    transaction.details.counterparty.name,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    transaction.date,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                transaction.amount,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (transaction.amount.startsWith("-"))
+                    MaterialTheme.colorScheme.error
+                else
+                    MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {

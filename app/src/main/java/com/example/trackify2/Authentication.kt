@@ -1,5 +1,7 @@
 package com.example.trackify2
 
+import android.app.Application
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -63,7 +65,7 @@ fun LoginScreen(navController: NavController) {
                 } else {
                     signInWithEmail(auth, email, password) { success, message ->
                         if (success) {
-                            navController.navigate("transactionApp") {
+                            navController.navigate("main") {
                                 popUpTo("login") { inclusive = true }
                             }
                         } else {

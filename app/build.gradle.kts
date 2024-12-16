@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.firebase.functions.ktx)
+    implementation(libs.bouncycastle.bcpkix)
 
 
     testImplementation(libs.junit)
