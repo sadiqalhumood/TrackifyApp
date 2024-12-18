@@ -59,7 +59,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
+    implementation("androidx.compose.material3:material3:1.2.0-alpha05")
     implementation(libs.engage.core)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
@@ -90,5 +90,6 @@ dependencies {
 
 
     implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
+    implementation(libs.firebase.firestore.ktx)
     implementation("com.google.firebase:firebase-analytics")
 }

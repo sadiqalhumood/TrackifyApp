@@ -24,6 +24,7 @@ moshi = "1.14.0"
 okhttp = "4.10.0"
 firebaseFunctionsKtx = "21.1.0"
 bouncycastle = "1.68"
+firebaseFirestoreKtx = "24.10.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -58,8 +59,7 @@ retrofit-converter-moshi = { group = "com.squareup.retrofit2", name = "converter
 okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version = "4.10.0" }
 firebase-functions-ktx = { group = "com.google.firebase", name = "firebase-functions-ktx", version.ref = "firebaseFunctionsKtx" }
 bouncycastle-bcpkix = { group = "org.bouncycastle", name = "bcpkix-jdk15on", version.ref = "bouncycastle" }
-
-
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
 
 
 

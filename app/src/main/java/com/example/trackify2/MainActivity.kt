@@ -1,5 +1,6 @@
 package com.example.trackify2
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,70 +20,52 @@ import com.google.firebase.FirebaseApp
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
+
         setContent {
-            Trackify2Theme {
-                AppNavigation()
+            // Check login state using SharedPreferences
+            val sharedPreferences = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+            val isLoggedIn = sharedPreferences.getBoolean("isLoggedIn", false)
+
+            val viewModel: AppSettingsViewModel = viewModel(
+                factory = AppSettingsViewModel.provideFactory(this)
+            )
+            val isDarkMode by viewModel.isDarkMode.collectAsState()
+
+            Trackify2Theme(darkTheme = isDarkMode) {
+                AppNavigation(isLoggedIn, viewModel)
             }
         }
     }
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(isLoggedIn: Boolean, viewModel: AppSettingsViewModel) {
     val navController = rememberNavController()
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = if (isLoggedIn) "main" else "login"
     ) {
         composable("login") {
             LoginScreen(navController)
         }
+        composable("signup") {
+            SignupScreen(navController)
+        }
         composable("main") {
-            MainScreen()
+            MainScreen(viewModel = viewModel)
+        }
+        composable("displaySettings") {
+            DisplaySettingsScreen(navController, viewModel)
         }
     }
 }
 
-@Composable
-fun MainScreen() {
-    val navController = rememberNavController()
-    val viewModel: AppSettingsViewModel = viewModel()
-
-    Scaffold(
-        bottomBar = {
-            BottomNavigationBar(navController)
-        }
-    ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = "home",
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable("home") {
-                TransactionScreen(
-                    viewModel = viewModel,
-                    navController = navController
-                )
-            }
-            composable("profile") {
-                ProfileScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-            composable("displaySettings") {
-                DisplaySettingsScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-        }
-    }
-}

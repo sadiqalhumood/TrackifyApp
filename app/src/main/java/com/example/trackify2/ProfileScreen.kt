@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -85,7 +86,7 @@ fun ProfileScreen(navController: NavController, viewModel: AppSettingsViewModel)
         SettingItem(
             icon = Icons.Default.Person,
             label = "Display",
-            onClick = { navController.navigate("displaySettings") } // Navigate to Display Settings
+            onClick = { navController.navigate("displaySettings") }
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -149,7 +150,7 @@ fun SettingItem(icon: ImageVector, label: String, onClick: () -> Unit) {
 
 @Composable
 fun DisplaySettingsScreen(navController: NavController, viewModel: AppSettingsViewModel) {
-    val isDarkMode = viewModel.isDarkMode.collectAsState()
+    val isDarkMode by viewModel.isDarkMode.collectAsState()
 
     Column(
         modifier = Modifier
@@ -159,46 +160,26 @@ fun DisplaySettingsScreen(navController: NavController, viewModel: AppSettingsVi
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Back",
-                tint = Color.Black
+                contentDescription = "Back"
             )
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = "Display Settings",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
+            style = MaterialTheme.typography.titleLarge
         )
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Dark Mode",
-                fontSize = 16.sp,
-                modifier = Modifier.weight(1f)
-            )
+            Text("Dark Mode", modifier = Modifier.weight(1f))
             Switch(
-                checked = isDarkMode.value,
-                onCheckedChange = { viewModel.toggleDarkMode() }, // Toggle dark mode
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = MaterialTheme.colorScheme.primary
-                )
+                checked = isDarkMode,
+                onCheckedChange = { viewModel.toggleDarkMode() }
             )
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = if (isDarkMode.value) "Dark mode is ON" else "Dark mode is OFF",
-            fontSize = 14.sp,
-            color = Color.Gray
-        )
     }
 }
+
+

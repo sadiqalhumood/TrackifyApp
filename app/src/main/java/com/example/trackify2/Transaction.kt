@@ -144,12 +144,13 @@ private fun ActualTransactionScreen(
 }
 
 @Composable
-private fun TransactionItem(transaction: Transaction) {
+fun TransactionItem(transaction: Transaction) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape = MaterialTheme.shapes.medium
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
             modifier = Modifier
@@ -158,66 +159,55 @@ private fun TransactionItem(transaction: Transaction) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column {
                 Text(
-                    // Use description instead of name
-                    transaction.description,
+                    text = transaction.description,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                // Add the transaction type
                 Text(
-                    transaction.details.counterparty.name,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    transaction.date,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium
+                    text = transaction.date,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
             Text(
-                transaction.amount,
-                fontWeight = FontWeight.Bold,
+                text = transaction.amount,
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (transaction.amount.startsWith("-"))
-                    MaterialTheme.colorScheme.error
-                else
-                    MaterialTheme.colorScheme.primary
+                fontWeight = FontWeight.Bold,
+                color = if (transaction.amount.startsWith("-")) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.primary
             )
         }
     }
 }
 
-@Composable
-fun BottomNavigationBar(navController: NavController) {
-    val items = listOf(
-        BottomNavItem(label = "Home", route = "home", icon = Icons.Default.Home),
-        BottomNavItem(label = "Profile", route = "profile", icon = Icons.Default.Person)
-    )
 
-    val currentDestination = navController.currentBackStackEntry?.destination?.route
-
-    NavigationBar {
-        items.forEach { item ->
-            NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.label) },
-                label = { Text(item.label) },
-                selected = currentDestination == item.route,
-                onClick = {
-                    navController.navigate(item.route) {
-                        // Ensure only one instance of the destination exists in the back stack
-                        popUpTo("home") { inclusive = false }
-                        launchSingleTop = true
-                    }
-                }
-            )
-        }
-    }
-}
+//@Composable
+//fun BottomNavigationBar(navController: NavController) {
+//    val items = listOf(
+//        BottomNavItem(label = "Home", route = "home", icon = Icons.Default.Home),
+//        BottomNavItem(label = "Profile", route = "profile", icon = Icons.Default.Person)
+//    )
+//
+//    val currentDestination = navController.currentBackStackEntry?.destination?.route
+//
+//    NavigationBar {
+//        items.forEach { item ->
+//            NavigationBarItem(
+//                icon = { Icon(item.icon, contentDescription = item.label) },
+//                label = { Text(item.label) },
+//                selected = currentDestination == item.route,
+//                onClick = {
+//                    navController.navigate(item.route) {
+//                        // Ensure only one instance of the destination exists in the back stack
+//                        popUpTo("home") { inclusive = false }
+//                        launchSingleTop = true
+//                    }
+//                }
+//            )
+//        }
+//    }
+//}
 

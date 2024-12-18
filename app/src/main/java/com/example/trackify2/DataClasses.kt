@@ -28,31 +28,32 @@ data class AccountLinks(
 
 data class Transaction(
     val id: String,
-    val account_id: String,
-    val type: String,
-    val status: String,
+    val description: String,
     val amount: String,
     val date: String,
-    val description: String,
-    @Json(name = "running_balance") val runningBalance: String?,
-    val details: TransactionDetails,
-    val links: TransactionLinks
+    val account_id: String = "", // Default empty string
+    val links: Map<String, String> = emptyMap(), // Default empty map
+    val runningBalance: String = "", // Default empty string
+    val status: String = "", // Default empty string
+    val type: String = "", // Default empty string
+    val details: TransactionDetails
 )
 
 data class TransactionDetails(
-    @Json(name = "processing_status") val processingStatus: String,
     val counterparty: Counterparty,
-    val category: String
+    val category: String = "", // Default empty string
+    val subcategory: String = "" // Default empty string
 )
 
 data class Counterparty(
-    val type: String,
     val name: String
 )
+
 
 data class TransactionLinks(
     val self: String,
     val account: String
 )
 
-data class BottomNavItem(val label: String, val route: String, val icon: ImageVector)
+
+
