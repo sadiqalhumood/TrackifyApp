@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("com.google.gms.google-services")
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -77,6 +78,8 @@ dependencies {
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.firebase.functions.ktx)
     implementation(libs.bouncycastle.bcpkix)
+    implementation(libs.androidx.room.common.jvm)
+    implementation(libs.androidx.room.ktx)
 
 
     testImplementation(libs.junit)
@@ -87,6 +90,10 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    implementation(libs.gson)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
 
 
     implementation(platform("com.google.firebase:firebase-bom:33.6.0"))

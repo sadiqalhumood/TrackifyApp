@@ -24,7 +24,7 @@ import androidx.compose.runtime.remember
 
 @Composable
 fun ExpensesScreen(viewModel: TransactionViewModel = viewModel(), onNavigateToAllTransactions: () -> Unit) {
-    val transactions by viewModel.transactions.collectAsState()
+    val recentTransactions by viewModel.recentTransactions.collectAsState()
     val errorState by viewModel.error.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -92,7 +92,7 @@ fun ExpensesScreen(viewModel: TransactionViewModel = viewModel(), onNavigateToAl
 
         // Recent Transactions List
         LazyColumn {
-            items(transactions.take(3)) { transaction ->
+            items(recentTransactions) { transaction ->
                 TransactionItem(transaction)
             }
         }
@@ -154,9 +154,9 @@ fun AddTransactionDialog(
 ) {
     var description by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
-    var expanded by remember { mutableStateOf(false) } // Controls dropdown visibility
-    var selectedCategory by remember { mutableStateOf("General") }
-    val categories = listOf("Food", "Transport", "Shopping", "General")
+    var expanded by remember { mutableStateOf(false) }
+    var selectedCategory by remember { mutableStateOf(StandardCategory.OTHER.displayName) }
+    val categories = StandardCategory.values().map { it.displayName }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -177,7 +177,6 @@ fun AddTransactionDialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Category Dropdown
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded }
@@ -213,7 +212,12 @@ fun AddTransactionDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onAddTransaction(description, amount, selectedCategory) }) {
+            Button(
+                onClick = {
+                    onAddTransaction(description, amount, selectedCategory)
+                },
+                enabled = description.isNotBlank() && amount.isNotBlank()
+            ) {
                 Text("Add")
             }
         },
@@ -225,10 +229,9 @@ fun AddTransactionDialog(
     )
 }
 
-
 @Composable
 fun AllTransactionsScreen(viewModel: TransactionViewModel = viewModel()) {
-    val transactions by viewModel.transactions.collectAsState()
+    val allTransactions by viewModel.allTransactions.collectAsState()
 
     Column(
         modifier = Modifier
@@ -242,7 +245,7 @@ fun AllTransactionsScreen(viewModel: TransactionViewModel = viewModel()) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         LazyColumn {
-            items(transactions) { transaction ->
+            items(allTransactions) { transaction ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -250,14 +253,15 @@ fun AllTransactionsScreen(viewModel: TransactionViewModel = viewModel()) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TransactionItem(transaction)
-                    Spacer(modifier = Modifier.weight(1f))
-                    IconButton(onClick = { viewModel.deleteTransaction(transaction.id) }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete Transaction")
+                    // Only show delete button for manual transactions
+                    if (transaction.id.startsWith("manual_")) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        IconButton(onClick = { viewModel.deleteTransaction(transaction.id) }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Transaction")
+                        }
                     }
                 }
             }
         }
     }
 }
-
-

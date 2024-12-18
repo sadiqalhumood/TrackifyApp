@@ -31,18 +31,17 @@ data class Transaction(
     val description: String,
     val amount: String,
     val date: String,
-    val account_id: String = "", // Default empty string
-    val links: Map<String, String> = emptyMap(), // Default empty map
-    val runningBalance: String = "", // Default empty string
-    val status: String = "", // Default empty string
-    val type: String = "", // Default empty string
-    val details: TransactionDetails
+    val details: TransactionDetails,
+    val category: TransactionCategory? = null
+)
+
+data class TransactionCategory(
+    val primary: String,
+    val detailed: String
 )
 
 data class TransactionDetails(
-    val counterparty: Counterparty,
-    val category: String = "", // Default empty string
-    val subcategory: String = "" // Default empty string
+    val counterparty: Counterparty
 )
 
 data class Counterparty(
@@ -50,10 +49,32 @@ data class Counterparty(
 )
 
 
+
 data class TransactionLinks(
     val self: String,
     val account: String
 )
+
+enum class StandardCategory(val displayName: String) {
+    FOOD_AND_DRINK("Food & Drink"),
+    TRANSPORTATION("Transportation"),
+    SHOPPING("Shopping"),
+    UTILITIES("Utilities"),
+    RENT_AND_MORTGAGE("Housing"),
+    TRAVEL("Travel"),
+    INCOME("Income"),
+    TRANSFER("Transfer"),
+    ENTERTAINMENT("Entertainment"),
+    HEALTH_AND_FITNESS("Health"),
+    EDUCATION("Education"),
+    OTHER("Other");
+
+    companion object {
+        fun fromDisplayName(name: String): StandardCategory {
+            return values().find { it.displayName == name } ?: OTHER
+        }
+    }
+}
 
 
 

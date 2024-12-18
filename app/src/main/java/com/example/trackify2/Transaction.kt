@@ -82,7 +82,7 @@ private fun ActualTransactionScreen(
     viewModel: TransactionViewModel,
     accessToken: String
 ) {
-    val transactions by viewModel.transactions.collectAsStateWithLifecycle()
+    val transactions by viewModel.allTransactions.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
@@ -134,7 +134,7 @@ private fun ActualTransactionScreen(
             }
             else -> {
                 LazyColumn {
-                    items(transactions) { transaction ->
+                    items(transactions as List<Transaction>) { transaction ->
                         TransactionItem(transaction)
                     }
                 }
@@ -167,6 +167,12 @@ fun TransactionItem(transaction: Transaction) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
+                    text = transaction.category?.primary ?:
+                    StandardCategory.fromDisplayName(transaction.details.counterparty.name).displayName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
                     text = transaction.date,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -176,8 +182,10 @@ fun TransactionItem(transaction: Transaction) {
                 text = transaction.amount,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
-                color = if (transaction.amount.startsWith("-")) MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.primary
+                color = if (transaction.amount.startsWith("-"))
+                    MaterialTheme.colorScheme.error
+                else
+                    MaterialTheme.colorScheme.primary
             )
         }
     }
