@@ -57,24 +57,67 @@ data class TransactionLinks(
 
 enum class StandardCategory(val displayName: String) {
     FOOD_AND_DRINK("Food & Drink"),
-    TRANSPORTATION("Transportation"),
     SHOPPING("Shopping"),
-    UTILITIES("Utilities"),
-    RENT_AND_MORTGAGE("Housing"),
-    TRAVEL("Travel"),
+    TRANSPORTATION("Transportation"),
+    BILLS_AND_UTILITIES("Bills & Utilities"),
+    ENTERTAINMENT("Entertainment"),
+    HEALTH("Health"),
     INCOME("Income"),
     TRANSFER("Transfer"),
-    ENTERTAINMENT("Entertainment"),
-    HEALTH_AND_FITNESS("Health"),
-    EDUCATION("Education"),
     OTHER("Other");
 
     companion object {
-        fun fromDisplayName(name: String): StandardCategory {
-            return values().find { it.displayName == name } ?: OTHER
+        fun fromDisplayName(displayName: String): StandardCategory {
+            return values().find { it.displayName.equals(displayName, ignoreCase = true) } ?: OTHER
+        }
+
+        fun fromDescription(description: String, amount: String): StandardCategory {
+            // Check if it's income based on positive amount
+            if (amount.toDoubleOrNull()?.let { it > 0 } == true) {
+                return INCOME
+            }
+
+            val lowerDesc = description.lowercase()
+            return when {
+                // Food & Drink patterns
+                lowerDesc.containsAny("restaurant", "cafe", "coffee", "food", "burger", "pizza", "doordash", "uber eats", "grubhub")
+                -> FOOD_AND_DRINK
+
+                // Shopping patterns
+                lowerDesc.containsAny("amazon", "walmart", "target", "store", "market", "shop", "retail")
+                -> SHOPPING
+
+                // Transportation patterns
+                lowerDesc.containsAny("uber", "lyft", "taxi", "gas", "fuel", "parking", "transit", "transport")
+                -> TRANSPORTATION
+
+                // Bills & Utilities patterns
+                lowerDesc.containsAny("electric", "water", "utility", "utilities", "bill", "insurance", "rent", "mortgage")
+                -> BILLS_AND_UTILITIES
+
+                // Entertainment patterns
+                lowerDesc.containsAny("movie", "theater", "netflix", "spotify", "hulu", "disney", "entertainment")
+                -> ENTERTAINMENT
+
+                // Health patterns
+                lowerDesc.containsAny("pharmacy", "doctor", "medical", "health", "fitness", "gym")
+                -> HEALTH
+
+                // Transfer patterns
+                lowerDesc.containsAny("transfer", "zelle", "venmo", "paypal", "cash app", "withdrawal", "deposit")
+                -> TRANSFER
+
+                // Default to OTHER if no patterns match
+                else -> OTHER
+            }
+        }
+
+        private fun String.containsAny(vararg keywords: String): Boolean {
+            return keywords.any { this.contains(it) }
         }
     }
 }
+
 
 
 

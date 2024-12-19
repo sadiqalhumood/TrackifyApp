@@ -53,12 +53,13 @@ fun HomeScreen(navController: NavController) {
             title = { Text("Hi, User") },
             actions = {
                 IconButton(onClick = { navController.navigate("profile") }) {
-                    Icon(Icons.Default.Person, "Profile")
+                    Icon(Icons.Default.Person, contentDescription = "Profile")
                 }
             }
         )
 
-        TabRow(homeNavController)
+        // TabRow placeholder
+        TabRow(navController = homeNavController)
 
         NavHost(
             navController = homeNavController,
@@ -66,11 +67,13 @@ fun HomeScreen(navController: NavController) {
         ) {
             composable("expenses") {
                 ExpensesScreen(
-                    onNavigateToAllTransactions = { homeNavController.navigate("allTransactions") }
+                    navController = homeNavController
                 )
             }
-            composable("allTransactions") {
-                AllTransactionsScreen()
+            composable("allTransactionsScreen") {
+                AllTransactionsScreen(
+                    navController = homeNavController
+                )
             }
             composable("report") {
                 ReportScreen()

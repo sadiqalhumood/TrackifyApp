@@ -11,7 +11,6 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalDate
@@ -40,6 +39,16 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
         _error.value = null
     }
 
+    init {
+        // Observe database changes
+        viewModelScope.launch {
+            transactionDao.getAllTransactions().collect { entities ->
+                val transactions = entities.map { it.toTransaction() }
+                updateTransactionLists(transactions)
+            }
+        }
+    }
+
     suspend fun fetchTransactions(accessToken: String) {
         try {
             val authHeader = createAuthHeader(accessToken)
@@ -52,31 +61,26 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
                     accountId = accountId
                 )
 
-                // Save API transactions to Room
+                // Map transactions with categories
+                val categorizedTransactions = fetchedTransactions.map { transaction ->
+                    val category = StandardCategory.fromDescription(
+                        transaction.description,
+                        transaction.amount
+                    )
+                    transaction.copy(
+                        category = TransactionCategory(
+                            primary = category.displayName,
+                            detailed = category.displayName
+                        )
+                    )
+                }
+
                 transactionDao.deleteAllApiTransactions()
-                transactionDao.insertTransactions(fetchedTransactions.map {
+                transactionDao.insertTransactions(categorizedTransactions.map {
                     it.toEntity(isManual = false)
                 })
 
-                // Get manual transactions
-                val manualTransactions: List<Transaction> = transactionDao.getManualTransactions()
-                    .first() // Collect the flow to get the actual list
-                    .map { entity -> entity.toTransaction() }
-
-                // Merge and sort the transactions by date
-                val mergedTransactions: List<Transaction> = (fetchedTransactions + manualTransactions).sortedByDescending { transaction ->
-                    transaction.date
-                }
-
-                // Update UI
-                updateTransactionLists(mergedTransactions)
-
-                // Save fetched transactions to Firestore
-                try {
-                    firestoreService.saveTransactions(fetchedTransactions)
-                } catch (e: Exception) {
-                    Timber.e(e, "Firestore save failed.")
-                }
+                firestoreService.saveTransactions(categorizedTransactions)
             } else {
                 setError("No accounts found.")
             }
@@ -85,35 +89,32 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
-
+    private fun updateTransactionLists(transactions: List<Transaction>) {
+        Timber.d("Updating All Transactions: $transactions")
+        _allTransactions.value = transactions.toMutableList()
+        _recentTransactions.value = transactions.take(3)
+}
 
     fun addTransaction(description: String, amount: String, category: String) {
         viewModelScope.launch {
             try {
+                val isIncome = category.equals("Income", ignoreCase = true)
                 val transaction = Transaction(
                     id = "manual_${System.currentTimeMillis()}",
                     description = description,
-                    amount = if (amount.startsWith("-")) amount else "-$amount",
-                    date = java.time.LocalDate.now().toString(),
+                    amount = if (isIncome) amount else "-${amount.trimStart('-')}",
+                    date = LocalDate.now().toString(),
                     details = TransactionDetails(counterparty = Counterparty(name = category)),
                     category = TransactionCategory(primary = category, detailed = category)
                 )
 
-                // Save to Room
                 transactionDao.insertTransaction(transaction.toEntity(isManual = true))
-
-                // Update UI
                 val updatedList = _allTransactions.value.toMutableList()
                 updatedList.add(0, transaction)
                 updateTransactionLists(updatedList)
 
-                // Save to Firestore if user is logged in
                 FirebaseAuth.getInstance().currentUser?.let {
-                    try {
-                        firestoreService.saveTransaction(transaction)
-                    } catch (e: Exception) {
-                        Timber.e(e, "Failed to save manual transaction to Firestore")
-                    }
+                    firestoreService.saveTransaction(transaction)
                 }
             } catch (e: Exception) {
                 setError("Error adding transaction: ${e.message}")
@@ -121,17 +122,14 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
+
+
     fun deleteTransaction(transactionId: String) {
         viewModelScope.launch {
             try {
-                // Delete from Room
                 transactionDao.deleteTransactionById(transactionId)
-
-                // Update UI
                 val updatedList = _allTransactions.value.filter { it.id != transactionId }
                 updateTransactionLists(updatedList)
-
-                // Delete from Firestore
                 firestoreService.deleteTransaction(transactionId)
             } catch (e: Exception) {
                 setError("Error deleting transaction: ${e.message}")
@@ -139,10 +137,9 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    private fun updateTransactionLists(transactions: List<Transaction>) {
-        _allTransactions.value = transactions.toMutableList()
-        _recentTransactions.value = transactions.take(3)
-    }
+
+
+
 
     private fun createAuthHeader(accessToken: String): String {
         val credentials = "$accessToken:"
@@ -155,7 +152,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
         id = id,
         description = description,
         amount = amount,
-        date = dateFormatter.format(LocalDate.parse(date)), // Ensure proper formatting
+        date = dateFormatter.format(LocalDate.parse(date)),
         details = details,
         category = category,
         isManual = isManual
@@ -165,7 +162,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
         id = id,
         description = description,
         amount = amount,
-        date = LocalDate.parse(date, dateFormatter).toString(), // Ensure proper conversion
+        date = LocalDate.parse(date, dateFormatter).toString(),
         details = details,
         category = category
     )

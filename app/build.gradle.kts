@@ -80,6 +80,7 @@ dependencies {
     implementation(libs.bouncycastle.bcpkix)
     implementation(libs.androidx.room.common.jvm)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.common)
 
 
     testImplementation(libs.junit)

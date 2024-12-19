@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,14 +16,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import kotlinx.coroutines.launch
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 
 @Composable
-fun ExpensesScreen(viewModel: TransactionViewModel = viewModel(), onNavigateToAllTransactions: () -> Unit) {
+fun ExpensesScreen(
+    viewModel: TransactionViewModel = viewModel(),
+    navController: NavController
+) {
     val recentTransactions by viewModel.recentTransactions.collectAsState()
     val errorState by viewModel.error.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -81,13 +81,18 @@ fun ExpensesScreen(viewModel: TransactionViewModel = viewModel(), onNavigateToAl
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            TextButton(onClick = onNavigateToAllTransactions) {
+            TextButton(
+                onClick = {
+                        navController.navigate("allTransactionsScreen")
+                }
+            ) {
                 Text(
                     text = "See All",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
+
         }
 
         // Recent Transactions List
@@ -116,35 +121,59 @@ fun ExpensesScreen(viewModel: TransactionViewModel = viewModel(), onNavigateToAl
     }
 }
 
-
-
-
-
-
 @Composable
-fun ReportScreen() {
+fun AllTransactionsScreen(
+    viewModel: TransactionViewModel = viewModel(),
+    navController: NavController
+) {
+    val transactions by viewModel.allTransactions.collectAsState()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    // Fetch transactions when screen loads
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            val sharedPrefs = context.getSharedPreferences("APP_PREFS", Context.MODE_PRIVATE)
+            val accessToken = sharedPrefs.getString("ACCESS_TOKEN", "") ?: ""
+            if (accessToken.isNotEmpty()) {
+                viewModel.fetchTransactions(accessToken)
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp)
     ) {
-        Text("Report Screen")
-        // Add your report content here
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "All Transactions",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            IconButton(onClick = { navController.navigateUp() }) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (transactions.isEmpty()) {
+            Text("No transactions found.", style = MaterialTheme.typography.bodyLarge)
+        } else {
+            LazyColumn {
+                items(transactions) { transaction ->
+                    TransactionItem(transaction)
+                }
+            }
+        }
     }
 }
 
-@Composable
-fun LeaderboardScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Leaderboard Screen")
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -177,6 +206,7 @@ fun AddTransactionDialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Dropdown Menu for Categories
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded }
@@ -230,38 +260,27 @@ fun AddTransactionDialog(
 }
 
 @Composable
-fun AllTransactionsScreen(viewModel: TransactionViewModel = viewModel()) {
-    val allTransactions by viewModel.allTransactions.collectAsState()
-
+fun ReportScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "All Transactions",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        LazyColumn {
-            items(allTransactions) { transaction ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TransactionItem(transaction)
-                    // Only show delete button for manual transactions
-                    if (transaction.id.startsWith("manual_")) {
-                        Spacer(modifier = Modifier.weight(1f))
-                        IconButton(onClick = { viewModel.deleteTransaction(transaction.id) }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete Transaction")
-                        }
-                    }
-                }
-            }
-        }
+        Text("Report Screen", style = MaterialTheme.typography.titleLarge)
+        // Add your report content here
+    }
+}
+
+@Composable
+fun LeaderboardScreen() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Leaderboard Screen", style = MaterialTheme.typography.titleLarge)
+        // Add your leaderboard content here
     }
 }
