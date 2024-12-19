@@ -12,11 +12,18 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.add
 import androidx.fragment.app.commit
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import io.teller.connect.sdk.*
 import timber.log.Timber
 import java.io.Serializable
 
 class ConnectActivity : FragmentActivity(), ConnectListener {
+
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
     companion object {
         val config = Config(
@@ -65,10 +72,30 @@ class ConnectActivity : FragmentActivity(), ConnectListener {
             Timber.i("Access Token: $accessToken")
             val sharedPrefs = getSharedPreferences("APP_PREFS", Context.MODE_PRIVATE)
             sharedPrefs.edit().putString("ACCESS_TOKEN", accessToken).apply()
-            finish()
+            auth.currentUser?.uid?.let { userId ->
+                db.collection("users")
+                    .document(userId)
+                    .set(
+                        mapOf(
+                            "accessToken" to accessToken,
+                            "lastUpdated" to Timestamp.now()
+                        ),
+                        SetOptions.merge()
+                    )
+                    .addOnSuccessListener {
+                        Timber.d("Access token saved to Firestore")
+                        finish()
+                    }
+                    .addOnFailureListener { e ->
+                        Timber.e(e, "Failed to save access token to Firestore")
+                        Toast.makeText(this, "Failed to save bank connection", Toast.LENGTH_LONG).show()
+                        finish()
+                    }
+            }
         } else {
             Timber.e("Access Token is null")
             Toast.makeText(this, "Failed to get access token", Toast.LENGTH_LONG).show()
+            finish()
         }
     }
 

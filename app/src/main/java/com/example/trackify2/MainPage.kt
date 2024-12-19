@@ -14,6 +14,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun MainScreen(viewModel: AppSettingsViewModel) {
@@ -50,7 +51,9 @@ fun HomeScreen(navController: NavController) {
 
     Column {
         TopAppBar(
-            title = { Text("Hi, User") },
+            title = { Text(
+                text =FirebaseAuth.getInstance().currentUser?.email ?: "Not signed in"
+                ) },
             actions = {
                 IconButton(onClick = { navController.navigate("profile") }) {
                     Icon(Icons.Default.Person, contentDescription = "Profile")

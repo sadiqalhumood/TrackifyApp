@@ -118,8 +118,9 @@ fun ProfileScreen(navController: NavController, viewModel: AppSettingsViewModel)
         // Logout Button
         Button(
             onClick = {
+                val tokenManager = TokenManager(context)
+                tokenManager.clearAccessToken()
                 FirebaseAuth.getInstance().signOut()
-                // Navigate to auth screen and clear back stack
                 navController.navigate("login") {
                     popUpTo(navController.graph.id) {
                         inclusive = true

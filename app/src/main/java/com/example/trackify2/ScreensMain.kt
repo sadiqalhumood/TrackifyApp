@@ -19,6 +19,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 @Composable
 fun ExpensesScreen(
@@ -26,21 +29,24 @@ fun ExpensesScreen(
     navController: NavController
 ) {
     val recentTransactions by viewModel.recentTransactions.collectAsState()
+    val allTransactions by viewModel.allTransactions.collectAsState()
     val errorState by viewModel.error.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val windowInfo = rememberWindowInfo()
+    val currentMonth = LocalDate.now().month.getDisplayName(TextStyle.FULL, Locale.getDefault())
+    val tokenManager = remember { TokenManager(context) }
 
     // Fetch transactions on load
     LaunchedEffect(Unit) {
         coroutineScope.launch {
+            val accessToken = tokenManager.getAccessToken()
             val sharedPrefs = context.getSharedPreferences("APP_PREFS", Context.MODE_PRIVATE)
-            val accessToken = sharedPrefs.getString("ACCESS_TOKEN", "") ?: ""
-            if (accessToken.isNotEmpty()) {
+            if (accessToken != null) {
                 viewModel.fetchTransactions(accessToken)
             } else {
-                viewModel.setError("No access token found.")
+                viewModel.setError("No bank account linked. Please link your account in the Profile section.")
             }
         }
     }
@@ -58,17 +64,39 @@ fun ExpensesScreen(
                     .weight(1f)
                     .padding(end = 8.dp)
             ) {
-                // Chart Placeholder
+                // Monthly Spending Chart Card
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(300.dp)
+                        .height(400.dp)
                 ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Text("Chart Placeholder", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = "$currentMonth Spending",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f)
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            TransactionPieChart(
+                                transactions = allTransactions,
+                                radiusOuter = 120.dp,
+                                chartBarWidth = 30.dp
+                            )
+                        }
                     }
                 }
 
@@ -78,7 +106,7 @@ fun ExpensesScreen(
                     onClick = { showAddDialog = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Transaction +")
+                    Text("Add Transaction +")
                 }
             }
 
@@ -105,11 +133,7 @@ fun ExpensesScreen(
                             fontWeight = FontWeight.Bold
                         )
                         TextButton(onClick = { navController.navigate("allTransactionsScreen") }) {
-                            Text(
-                                text = "See All",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            Text("See All")
                         }
                     }
 
@@ -118,7 +142,10 @@ fun ExpensesScreen(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("No transactions yet", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                "No transactions yet",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
                     } else {
                         LazyColumn(
@@ -140,17 +167,39 @@ fun ExpensesScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // Chart Placeholder
+            // Monthly Spending Chart Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(350.dp)
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text("Chart Placeholder", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = "$currentMonth Spending",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        TransactionPieChart(
+                            transactions = allTransactions,
+                            radiusOuter = 100.dp,
+                            chartBarWidth = 25.dp
+                        )
+                    }
                 }
             }
 
@@ -160,7 +209,7 @@ fun ExpensesScreen(
                 onClick = { showAddDialog = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Transaction +")
+                Text("Add Transaction +")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -176,20 +225,28 @@ fun ExpensesScreen(
                     fontWeight = FontWeight.Bold
                 )
                 TextButton(onClick = { navController.navigate("allTransactionsScreen") }) {
-                    Text(
-                        text = "See All",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Text("See All")
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(recentTransactions) { transaction ->
-                    TransactionItem(transaction)
+            if (recentTransactions.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "No transactions yet",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(recentTransactions) { transaction ->
+                        TransactionItem(transaction)
+                    }
                 }
             }
         }
@@ -208,7 +265,11 @@ fun ExpensesScreen(
 
     // Display Error
     errorState?.let {
-        Text(text = it, color = MaterialTheme.colorScheme.error)
+        Text(
+            text = it,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
     }
 }
 

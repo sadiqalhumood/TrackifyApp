@@ -34,6 +34,13 @@ fun LoginScreen(navController: NavController) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
+        TrackifyLogo(
+            size = 240.dp
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         Text(
             text = "Welcome!",
             style = MaterialTheme.typography.displayMedium,
