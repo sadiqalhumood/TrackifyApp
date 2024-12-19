@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -20,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 
 
 @Composable
@@ -65,7 +67,7 @@ fun ProfileScreen(navController: NavController, viewModel: AppSettingsViewModel)
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "example@domain.com",
+                        text = FirebaseAuth.getInstance().currentUser?.email ?: "Not signed in",
                         fontSize = 14.sp,
                         color = Color.Gray
                     )
@@ -101,7 +103,6 @@ fun ProfileScreen(navController: NavController, viewModel: AppSettingsViewModel)
 
         Button(
             onClick = {
-                // Start Teller Connect Activity
                 val intent = Intent(context, ConnectActivity::class.java)
                 context.startActivity(intent)
             },
@@ -111,9 +112,42 @@ fun ProfileScreen(navController: NavController, viewModel: AppSettingsViewModel)
         ) {
             Text(text = "Connect Bank Account")
         }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Logout Button
+        Button(
+            onClick = {
+                FirebaseAuth.getInstance().signOut()
+                // Navigate to auth screen and clear back stack
+                navController.navigate("login") {
+                    popUpTo(navController.graph.id) {
+                        inclusive = true
+                    }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error
+            )
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ExitToApp,
+                    contentDescription = "Logout",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Logout")
+            }
+        }
     }
 }
-
 
 
 @Composable

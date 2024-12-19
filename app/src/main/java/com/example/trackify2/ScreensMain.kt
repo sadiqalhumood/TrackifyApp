@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -29,6 +30,7 @@ fun ExpensesScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val windowInfo = rememberWindowInfo()
 
     // Fetch transactions on load
     LaunchedEffect(Unit) {
@@ -43,81 +45,205 @@ fun ExpensesScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Chart Placeholder
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Chart Placeholder", style = MaterialTheme.typography.bodyLarge)
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Add Transaction Button
-        Button(
-            onClick = { showAddDialog = true },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Transaction +")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Recent Transactions Header with "See All"
+    if (windowInfo.screenWidthInfo is WindowInfo.WindowType.Expanded) {
+        // Landscape layout
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Text(
-                text = "Recent Transactions",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            TextButton(
-                onClick = {
-                        navController.navigate("allTransactionsScreen")
+            // Left column with chart and add button
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
+            ) {
+                // Chart Placeholder
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Chart Placeholder", style = MaterialTheme.typography.bodyLarge)
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { showAddDialog = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Transaction +")
+                }
+            }
+
+            // Right column with transactions
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 8.dp)
+                    .fillMaxHeight()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Recent Transactions",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        TextButton(onClick = { navController.navigate("allTransactionsScreen") }) {
+                            Text(
+                                text = "See All",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    if (recentTransactions.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("No transactions yet", style = MaterialTheme.typography.bodyLarge)
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(recentTransactions) { transaction ->
+                                TransactionItem(transaction)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        // Portrait layout
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            // Chart Placeholder
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Chart Placeholder", style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { showAddDialog = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Transaction +")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "See All",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    text = "Recent Transactions",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
-            }
-
-        }
-
-        // Recent Transactions List
-        LazyColumn {
-            items(recentTransactions) { transaction ->
-                TransactionItem(transaction)
-            }
-        }
-
-        // Add Transaction Dialog
-        if (showAddDialog) {
-            AddTransactionDialog(
-                onDismiss = { showAddDialog = false },
-                onAddTransaction = { description, amount, category ->
-                    viewModel.addTransaction(description, amount, category)
-                    showAddDialog = false
+                TextButton(onClick = { navController.navigate("allTransactionsScreen") }) {
+                    Text(
+                        text = "See All",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
-            )
+            }
+
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(recentTransactions) { transaction ->
+                    TransactionItem(transaction)
+                }
+            }
+        }
+    }
+
+    // Add Transaction Dialog
+    if (showAddDialog) {
+        AddTransactionDialog(
+            onDismiss = { showAddDialog = false },
+            onAddTransaction = { description, amount, category ->
+                viewModel.addTransaction(description, amount, category)
+                showAddDialog = false
+            }
+        )
+    }
+
+    // Display Error
+    errorState?.let {
+        Text(text = it, color = MaterialTheme.colorScheme.error)
+    }
+}
+
+// Add this class to detect window size
+data class WindowInfo(
+    val screenWidthInfo: WindowType,
+    val screenHeightInfo: WindowType
+) {
+    sealed class WindowType {
+        object Compact: WindowType()
+        object Medium: WindowType()
+        object Expanded: WindowType()
+    }
+}
+
+@Composable
+fun rememberWindowInfo(): WindowInfo {
+    val configuration = LocalConfiguration.current
+    return remember(configuration) {
+        val screenWidth = configuration.screenWidthDp
+        val screenHeight = configuration.screenHeightDp
+
+        val widthInfo = when {
+            screenWidth < 600 -> WindowInfo.WindowType.Compact
+            screenWidth < 840 -> WindowInfo.WindowType.Medium
+            else -> WindowInfo.WindowType.Expanded
         }
 
-        // Display Error
-        Spacer(modifier = Modifier.height(8.dp))
-        errorState?.let {
-            Text(text = it, color = MaterialTheme.colorScheme.error)
+        val heightInfo = when {
+            screenHeight < 480 -> WindowInfo.WindowType.Compact
+            screenHeight < 900 -> WindowInfo.WindowType.Medium
+            else -> WindowInfo.WindowType.Expanded
         }
+
+        WindowInfo(widthInfo, heightInfo)
     }
 }
 
@@ -259,28 +385,5 @@ fun AddTransactionDialog(
     )
 }
 
-@Composable
-fun ReportScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Report Screen", style = MaterialTheme.typography.titleLarge)
-        // Add your report content here
-    }
-}
 
-@Composable
-fun LeaderboardScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Leaderboard Screen", style = MaterialTheme.typography.titleLarge)
-        // Add your leaderboard content here
-    }
-}
+

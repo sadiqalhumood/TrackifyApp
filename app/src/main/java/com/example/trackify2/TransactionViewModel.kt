@@ -21,6 +21,8 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
     private val database = AppDatabase.getDatabase(application)
     private val transactionDao = database.transactionDao()
     private val firestoreService = FirestoreService()
+    private val calculator = TransactionCalculator()
+    private val scoringService = ScoringService()
 
     private val _allTransactions = MutableStateFlow<MutableList<Transaction>>(mutableListOf())
     val allTransactions: StateFlow<List<Transaction>> = _allTransactions
@@ -28,8 +30,35 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
     private val _recentTransactions = MutableStateFlow<List<Transaction>>(emptyList())
     val recentTransactions: StateFlow<List<Transaction>> = _recentTransactions
 
+    private val _transactionTotals = MutableStateFlow(TransactionTotals())
+    val transactionTotals: StateFlow<TransactionTotals> = _transactionTotals
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
+
+    init {
+        viewModelScope.launch {
+            transactionDao.getAllTransactions().collect { entities ->
+                val transactions = entities.map { it.toTransaction() }
+                updateTransactionLists(transactions)
+                _transactionTotals.value = calculator.calculateTotals(transactions)
+                calculateScores(transactions)
+            }
+        }
+    }
+
+    fun calculateScores(transactions: List<Transaction>) {
+        viewModelScope.launch {
+            try {
+                Timber.d("Calculating scores for ${transactions.size} transactions")
+                scoringService.calculateAndUpdateAllMonthlyScores(transactions)
+                Timber.d("Score calculation completed")
+            } catch (e: Exception) {
+                Timber.e(e, "Error calculating scores")
+                setError("Error calculating scores: ${e.message}")
+            }
+        }
+    }
 
     fun setError(message: String?) {
         _error.value = message
@@ -37,16 +66,6 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun clearError() {
         _error.value = null
-    }
-
-    init {
-        // Observe database changes
-        viewModelScope.launch {
-            transactionDao.getAllTransactions().collect { entities ->
-                val transactions = entities.map { it.toTransaction() }
-                updateTransactionLists(transactions)
-            }
-        }
     }
 
     suspend fun fetchTransactions(accessToken: String) {
@@ -61,7 +80,6 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
                     accountId = accountId
                 )
 
-                // Map transactions with categories
                 val categorizedTransactions = fetchedTransactions.map { transaction ->
                     val category = StandardCategory.fromDescription(
                         transaction.description,
@@ -80,6 +98,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
                     it.toEntity(isManual = false)
                 })
 
+                calculateScores(categorizedTransactions)
                 firestoreService.saveTransactions(categorizedTransactions)
             } else {
                 setError("No accounts found.")
@@ -93,7 +112,8 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
         Timber.d("Updating All Transactions: $transactions")
         _allTransactions.value = transactions.toMutableList()
         _recentTransactions.value = transactions.take(3)
-}
+        _transactionTotals.value = calculator.calculateTotals(transactions)
+    }
 
     fun addTransaction(description: String, amount: String, category: String) {
         viewModelScope.launch {
@@ -113,6 +133,9 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
                 updatedList.add(0, transaction)
                 updateTransactionLists(updatedList)
 
+                // Calculate scores after adding new transaction
+                calculateScores(updatedList)
+
                 FirebaseAuth.getInstance().currentUser?.let {
                     firestoreService.saveTransaction(transaction)
                 }
@@ -122,14 +145,13 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
-
-
     fun deleteTransaction(transactionId: String) {
         viewModelScope.launch {
             try {
                 transactionDao.deleteTransactionById(transactionId)
                 val updatedList = _allTransactions.value.filter { it.id != transactionId }
                 updateTransactionLists(updatedList)
+                calculateScores(updatedList)
                 firestoreService.deleteTransaction(transactionId)
             } catch (e: Exception) {
                 setError("Error deleting transaction: ${e.message}")
@@ -137,9 +159,11 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
-
-
-
+    fun recalculateAllScores() {
+        viewModelScope.launch {
+            calculateScores(_allTransactions.value)
+        }
+    }
 
     private fun createAuthHeader(accessToken: String): String {
         val credentials = "$accessToken:"
