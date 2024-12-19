@@ -463,7 +463,20 @@ fun AddTransactionDialog(
     var amount by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf(StandardCategory.OTHER.displayName) }
+    var amountError by remember { mutableStateOf<String?>(null) }
     val categories = StandardCategory.values().map { it.displayName }
+
+    // Amount validation function
+    fun validateAmount(input: String): Boolean {
+        return try {
+            if (input.isEmpty()) return true
+            // Allow numbers with optional decimal point and up to 2 decimal places
+            val regex = """^\d*\.?\d{0,2}$""".toRegex()
+            regex.matches(input) && input.toDoubleOrNull() != null
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -473,15 +486,38 @@ fun AddTransactionDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") }
+                    label = { Text("Description") },
+                    modifier = Modifier.fillMaxWidth()
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
+
                 OutlinedTextField(
                     value = amount,
-                    onValueChange = { amount = it },
+                    onValueChange = { newValue ->
+                        if (validateAmount(newValue)) {
+                            amount = newValue
+                            amountError = null
+                        } else {
+                            amountError = "Please enter a valid amount"
+                        }
+                    },
                     label = { Text("Amount") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal
+                    ),
+                    isError = amountError != null,
+                    supportingText = {
+                        if (amountError != null) {
+                            Text(
+                                text = amountError!!,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Dropdown Menu for Categories
@@ -522,9 +558,15 @@ fun AddTransactionDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    onAddTransaction(description, amount, selectedCategory)
+                    val validAmount = amount.toDoubleOrNull()
+                    if (validAmount != null) {
+                        onAddTransaction(description, amount, selectedCategory)
+                    }
                 },
-                enabled = description.isNotBlank() && amount.isNotBlank()
+                enabled = description.isNotBlank() &&
+                        amount.isNotBlank() &&
+                        amountError == null &&
+                        amount.toDoubleOrNull() != null
             ) {
                 Text("Add")
             }
@@ -536,6 +578,4 @@ fun AddTransactionDialog(
         }
     )
 }
-
-
 

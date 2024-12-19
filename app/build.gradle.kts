@@ -81,6 +81,7 @@ dependencies {
     implementation(libs.androidx.room.common.jvm)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.common)
+    implementation(libs.play.services.maps)
 
 
     testImplementation(libs.junit)

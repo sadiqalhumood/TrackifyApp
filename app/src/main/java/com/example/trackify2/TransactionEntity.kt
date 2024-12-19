@@ -18,7 +18,7 @@ data class TransactionEntity(
     val date: String,
     val details: TransactionDetails,
     val category: TransactionCategory?,
-    val isManual: Boolean // To distinguish between manual and API transactions
+    val isManual: Boolean
 )
 
 
