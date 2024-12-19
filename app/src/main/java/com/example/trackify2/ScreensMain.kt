@@ -22,6 +22,14 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 
 @Composable
 fun ExpensesScreen(
@@ -308,6 +316,7 @@ fun rememberWindowInfo(): WindowInfo {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AllTransactionsScreen(
     viewModel: TransactionViewModel = viewModel(),
@@ -316,6 +325,10 @@ fun AllTransactionsScreen(
     val transactions by viewModel.allTransactions.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategories by remember { mutableStateOf(emptySet<StandardCategory>()) }
+    var showFilters by remember { mutableStateOf(false) }
 
     // Fetch transactions when screen loads
     LaunchedEffect(Unit) {
@@ -328,32 +341,110 @@ fun AllTransactionsScreen(
         }
     }
 
+    // Filter transactions based on search query and selected categories
+    val filteredTransactions = transactions.filter { transaction ->
+        val matchesSearch = transaction.description.contains(searchQuery, ignoreCase = true)
+        val matchesCategory = selectedCategories.isEmpty() ||
+                selectedCategories.any { it.displayName == transaction.category?.primary }
+        matchesSearch && matchesCategory
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "All Transactions",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+        // Search Bar
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            placeholder = { Text("Search transactions") },
+            leadingIcon = {
+                Icon(Icons.Default.Search, contentDescription = "Search")
+            },
+            trailingIcon = {
+                Row {
+                    IconButton(onClick = { showFilters = !showFilters }) {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = "Filters",
+                            tint = if (selectedCategories.isNotEmpty())
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            },
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline
             )
-            IconButton(onClick = { navController.navigateUp() }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+        )
+
+        // Category Filters
+        AnimatedVisibility(
+            visible = showFilters,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(StandardCategory.values().filter { it != StandardCategory.INCOME }) { category ->
+                    FilterChip(
+                        selected = category in selectedCategories,
+                        onClick = {
+                            selectedCategories = if (category in selectedCategories) {
+                                selectedCategories - category
+                            } else {
+                                selectedCategories + category
+                            }
+                        },
+                        label = { Text(category.displayName) },
+                        leadingIcon = if (category in selectedCategories) {
+                            {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            }
+                        } else null
+                    )
+                }
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
 
-        if (transactions.isEmpty()) {
-            Text("No transactions found.", style = MaterialTheme.typography.bodyLarge)
+        if (filteredTransactions.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (searchQuery.isEmpty() && selectedCategories.isEmpty())
+                        "No transactions found."
+                    else
+                        "No matching transactions found.",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
         } else {
-            LazyColumn {
-                items(transactions) { transaction ->
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(filteredTransactions) { transaction ->
                     TransactionItem(transaction)
                 }
             }
